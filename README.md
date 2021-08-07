@@ -1,2 +1,2 @@
 # algo_trading
-It's the repository of Algorithmic Trading with mql5
+It's a repository of Algorithmic Trading with mql5
