@@ -5,6 +5,7 @@
 #include <trade/trade.mqh>
 #include <generic/hashmap.mqh>
 #include <generic/arraylist.mqh>
+#include <CreateOrder.mqh>
 
 input double StartLot = 0.1;
 input int TProfit = 100;
@@ -26,8 +27,6 @@ input int Slow_MA_Shift = 0;
 input ENUM_MA_METHOD Slow_MA_Method = MODE_SMA;
 input ENUM_APPLIED_PRICE Slow_MA_Applied = PRICE_CLOSE;
 
-MqlTradeRequest request;
-MqlTradeResult result;
 MqlTick last_tick;
 
 CHashMap<ulong, string> AllPos;
@@ -161,7 +160,7 @@ void OnTick()
         if (PosProfit < -60)
         {
           MqlTradeResult Newres;
-          Newres = OrderPlace(result[1], 33, 0, 0.6);
+          Newres = localCreateOrder(result[1], 33, 0.6);
 
           AllPos.TrySetValue(PTick[t], "23*" + result[1] + "*0*" + Newres.deal);
         }
@@ -239,9 +238,8 @@ void OnTick()
       MqlTradeResult ordres1;
       MqlTradeResult ordres2;
 
-      ordres1 = OrderPlace("Sell", 11, CalcTP("Sell"), StartLot);
-
-      ordres2 = OrderPlace("Sell", 12, 0, StartLot);
+      ordres1 = localCreateOrder("Sell", 11, StartLot);
+      ordres2 = localCreateOrder("Sell", 12, StartLot);
 
       if (ordres1.deal != 0 && ordres2.deal != 0)
       {
@@ -297,9 +295,8 @@ void OnTick()
       MqlTradeResult ordres1;
       MqlTradeResult ordres2;
 
-      ordres1 = OrderPlace("Buy", 11, CalcTP("Buy"), StartLot);
-
-      ordres2 = OrderPlace("Buy", 12, 0, StartLot);
+      ordres1 = localCreateOrder("Buy", 11, StartLot);
+      ordres2 = localCreateOrder("Buy", 12, StartLot);
 
       if (ordres1.deal != 0 && ordres2.deal != 0)
       {
@@ -307,63 +304,6 @@ void OnTick()
         SellEnterAllow = true;
       }
     }
-}
-
-MqlTradeResult OrderPlace(string PosType, int magicNo, double CalcTP, double Lot)
-{
-  if (PosType == "Buy")
-  {
-    SymbolInfoTick(_Symbol, last_tick);
-
-    ZeroMemory(request);
-    ZeroMemory(result);
-
-    request.action = TRADE_ACTION_DEAL;
-    request.magic = magicNo;
-    request.comment = (string)magicNo;
-    request.symbol = _Symbol;
-    Lot = (MathFloor(Lot * 100)) / 100;
-    Lot = NormalizeDouble(Lot, 2);
-    request.volume = Lot;
-    if (magicNo == 11)
-    {
-      //request.sl=last_tick.bid-(StopL*0.00001);
-      request.tp = last_tick.ask + CalcTP;
-    }
-
-    request.type = ORDER_TYPE_BUY;
-
-    request.price = last_tick.ask;
-
-    OrderSend(request, result);
-  }
-  if (PosType == "Sell")
-  {
-    SymbolInfoTick(_Symbol, last_tick);
-
-    ZeroMemory(request);
-    ZeroMemory(result);
-
-    request.action = TRADE_ACTION_DEAL;
-    request.magic = magicNo;
-    request.comment = (string)magicNo;
-    request.symbol = _Symbol;
-    Lot = (MathFloor(Lot * 100)) / 100;
-    Lot = NormalizeDouble(Lot, 2);
-    request.volume = Lot;
-    if (magicNo == 11)
-    {
-      //request.sl=last_tick.bid+(StopL*0.00001);
-      request.tp = last_tick.ask - CalcTP;
-    }
-
-    request.type = ORDER_TYPE_SELL;
-
-    request.price = last_tick.bid;
-
-    OrderSend(request, result);
-  }
-  return result;
 }
 
 double CalcTP(string PosType)
@@ -484,4 +424,28 @@ void PositionFetch()
       }
     }
   }
+}
+
+MqlTradeResult localCreateOrder(string orderType, int magic, double lot)
+{
+  double price = 0;
+  double tp = 0;
+  double sl = 0;
+
+  SymbolInfoTick(_Symbol, last_tick);
+
+  if (orderType == "Buy")
+  {
+    price = last_tick.ask;
+    if (magic == 11)
+      tp = last_tick.ask + CalcTP(orderType);
+  }
+  else if (orderType == "Sell")
+  {
+    price = last_tick.bid;
+    if (magic == 11)
+      tp = last_tick.ask - CalcTP(orderType);
+  }
+
+  return CreateOrder(_Symbol, orderType, magic, (string)magic, lot, price, tp, sl);
 }
