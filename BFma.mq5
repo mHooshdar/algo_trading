@@ -207,7 +207,7 @@ void OnTick()
                      if(PosProfit<((double)StepsStringSplit[0] * StayPosRatioMax * ((double)StepsStringSplit[1]/Point())/(-10)))
                      {
                         MqlTradeResult Newres ;
-                        Newres = localCreateOrder(result[1], 33, StartLot * ((double)StepsStringSplit[0] * StayPosRatioMax), "");
+                        Newres = localCreateOrder(result[1], 33, "", StartLot * ((double)StepsStringSplit[0] * StayPosRatioMax));
                         
                         AllPos.TrySetValue(PTick[t], "23*"+result[1]+"*"+result[2]+"*"+Newres.deal+"*"+result[4]);
                      }
@@ -262,7 +262,7 @@ void OnTick()
            
     //ordres1 = OrderPlace("Sell",11,((double)StepStringSplit[0]*(double)StepStringSplit[1]),StartLot,StepString);
          
-         ordres2 = localCreateOrder("Sell", 12, StartLot, StepString);
+         ordres2 = localCreateOrder("Sell", 12, "", StartLot, StepString);
 
          if(ordres2.deal != 0)
          {
@@ -297,7 +297,7 @@ void OnTick()
            
     //ordres1=     OrderPlace("Buy",11,((double)StepStringSplit[0]*(double)StepStringSplit[1]),StartLot,StepString);
          
-     ordres2 = localCreateOrder("Buy", 12, StartLot, StepString);
+     ordres2 = localCreateOrder("Buy", 12, "", StartLot, StepString);
 
        if(ordres2.deal != 0)
          {
@@ -449,7 +449,7 @@ void PositionFetch()
      }
 }
 
-MqlTradeResult localCreateOrder(string orderType, int magic, double lot, string comment)
+MqlTradeResult localCreateOrder(string orderType, int magic, string comment, double lot)
 {
   double price = 0;
   double tp = 0;
