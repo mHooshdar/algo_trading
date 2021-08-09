@@ -13,6 +13,7 @@
 #include <trade/trade.mqh>
 #include <generic/hashmap.mqh>
 #include <generic/arraylist.mqh>
+#include <CreateOrder.mqh>
 
 
 input double    StartLot=0.1;
@@ -206,7 +207,7 @@ void OnTick()
                      if(PosProfit<((double)StepsStringSplit[0] * StayPosRatioMax * ((double)StepsStringSplit[1]/Point())/(-10)))
                      {
                         MqlTradeResult Newres ;
-                        Newres =  OrderPlace(result[1],33,0,StartLot*((double)StepsStringSplit[0] * StayPosRatioMax),"");
+                        Newres = localCreateOrder(result[1], 33, "", StartLot * ((double)StepsStringSplit[0] * StayPosRatioMax));
                         
                         AllPos.TrySetValue(PTick[t], "23*"+result[1]+"*"+result[2]+"*"+Newres.deal+"*"+result[4]);
                      }
@@ -261,7 +262,7 @@ void OnTick()
            
     //ordres1 = OrderPlace("Sell",11,((double)StepStringSplit[0]*(double)StepStringSplit[1]),StartLot,StepString);
          
-       ordres2=     OrderPlace("Sell",12,0,StartLot,StepString);
+         ordres2 = localCreateOrder("Sell", 12, "", StartLot, StepString);
 
          if(ordres2.deal != 0)
          {
@@ -296,8 +297,8 @@ void OnTick()
            
     //ordres1=     OrderPlace("Buy",11,((double)StepStringSplit[0]*(double)StepStringSplit[1]),StartLot,StepString);
          
-     ordres2=    OrderPlace("Buy",12,0,StartLot,StepString);
-         
+     ordres2 = localCreateOrder("Buy", 12, "", StartLot, StepString);
+
        if(ordres2.deal != 0)
          {
             BuyEnterAllow = false;
@@ -308,65 +309,6 @@ void OnTick()
       
    
   }
-
-MqlTradeResult OrderPlace(string PosType,int magicNo,double CalcTP,double Lot,string orderComment)
-{
-   if(PosType == "Buy")
-     {
-       SymbolInfoTick(_Symbol,last_tick);
-
-                                    ZeroMemory(request);
-                                    ZeroMemory(result);
-
-                                    request.action=TRADE_ACTION_DEAL;
-                                    request.magic=magicNo;
-                                    request.comment = orderComment;
-                                    request.symbol=_Symbol;
-                                    Lot = (MathFloor(Lot * 100)) / 100;
-                                    Lot = NormalizeDouble(Lot, 2);
-                                    request.volume= Lot;
-                                    if(magicNo == 11)
-                                    {
-                                    //request.sl=last_tick.bid-(StopL*0.00001);
-                                    request.tp=last_tick.ask+CalcTP;
-                                    }
-
-                                    request.type=ORDER_TYPE_BUY;
-
-                                    request.price=last_tick.ask;
-
-
-                                    OrderSend(request,result);
-     }
-   if(PosType == "Sell")
-     {
-                         SymbolInfoTick(_Symbol,last_tick);
-
-                                    ZeroMemory(request);
-                                    ZeroMemory(result);
-
-                                    request.action=TRADE_ACTION_DEAL;
-                                    request.magic=magicNo;
-                                    request.comment = orderComment;
-                                    request.symbol=_Symbol;
-                                    Lot = (MathFloor(Lot * 100)) / 100;
-                                    Lot = NormalizeDouble(Lot, 2);
-                                    request.volume= Lot;
-                                    if(magicNo == 11)
-                                    {
-                                    //request.sl=last_tick.bid+(StopL*0.00001);
-                                    request.tp=last_tick.ask-CalcTP;
-                                    }
-
-                                    request.type=  ORDER_TYPE_SELL;
-
-                                    request.price=last_tick.bid;
-
-
-                                    OrderSend(request,result);
-     }
-     return result;
-}
 
 string CalcStep(string PosType)
 {
@@ -507,3 +449,22 @@ void PositionFetch()
      }
 }
 
+MqlTradeResult localCreateOrder(string orderType, int magic, string comment, double lot)
+{
+  double price = 0;
+  double tp = 0;
+  double sl = 0;
+
+  SymbolInfoTick(_Symbol, last_tick);
+
+  if (orderType == "Buy")
+  {
+    price = last_tick.ask;
+  }
+  else if (orderType == "Sell")
+  {
+    price = last_tick.bid;
+  }
+
+  return CreateOrder(_Symbol, orderType, magic, comment, lot, price, tp, sl);
+}
